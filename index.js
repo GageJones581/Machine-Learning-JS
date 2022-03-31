@@ -115,19 +115,3 @@ exports.Network = class {
     }
   }
 }
-
-const X = [[0, 0], [0, 1], [1, 0], [1, 1]]
-const Y = [[0], [1], [1], [0]]
-
-const network = new exports.Network(
-  new exports.Dense(2, 2),
-  new exports.Tanh(),
-  new exports.Dense(2, 1),
-  new exports.Tanh()
-)
-
-network.train(X, Y, exports.mse, exports.msePrime, 0.1, 1000)
-
-for (let i = 0; i < X.length; i++) {
-  console.log(`Y: ${Y[i][0]}, Y*: ${network.predict(math.resize(X[i], [2, 1]))._data}`)
-}
