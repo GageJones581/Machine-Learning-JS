@@ -92,6 +92,7 @@ exports.Network = class {
   }
 
   train (xTrain, yTrain, loss, lossPrime, learningRate, epochs = 1000) {
+    const errors = []
     const zippedXY = zip(xTrain, yTrain)
     for (let e = 0; e < epochs; e++) {
       let error = 0
@@ -111,7 +112,8 @@ exports.Network = class {
 
       }
       error /= zippedXY.length
-      console.log(`${e+1}/${epochs}, error=${error}`)
+      errors.push(error)
     }
+    return errors
   }
 }
