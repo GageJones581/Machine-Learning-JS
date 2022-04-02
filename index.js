@@ -153,15 +153,3 @@ exports.Network = class {
     return errors
   }
 }
-
-const X = [[0, 0], [0, 1], [1, 0], [1, 1]]
-const Y = [[0], [1], [1], [0]]
-
-const network = new exports.Network(2, 1, 1)
-
-
-const errors = network.train(X, Y, exports.mse, exports.msePrime, 0.1, 1000, true)
-
-for (let i = 0; i < X.length; i++) {
-  console.log('X: ', X[i], 'Y*: ', network.predict(X[i])._data, ", Y: ", Y[i])
-}
