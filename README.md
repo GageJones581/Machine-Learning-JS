@@ -9,6 +9,6 @@ I'll move this to a jsdoc eventually.
 
 To create a neural network, use `const NETWORKNAME = ml.network(NUMINPUTS(int), NUMOUTPUTS(int), NUMHIDDENLAYERs(int))`. 
 
-To train the neural network, use `const errors = NETWORKNAME.train(XTRAIN(arr), YTRAIN(arr), LOSS(func), LOSSPRIME(func), LEARNINGRATE(float), EPOCHS(int), VERBOSE(bool))`. This returns a list of all the errors from each epoch.
+To train the neural network, use `const ERRORS = NETWORKNAME.train(XTRAIN(arr), YTRAIN(arr), LOSS(func), LOSSPRIME(func), LEARNINGRATE(float), EPOCHS(int), VERBOSE(bool))`. This returns a list of all the errors from each epoch.
 
 To receive a prediction, use `NETWORKNAME.predict(INPUT(arr))`.
