@@ -79,19 +79,53 @@ exports.msePrime = function (yTrue, yPred) {
 const zip = (a, b) => a.map((k, i) => [k, b[i]])
 
 exports.Network = class {
-  constructor (...layers) {
+  constructor (inputs, outputs, numHiddenLayers = 2) {
+    this.layers = []
+    this.layers.push(new exports.Dense(inputs, outputs * (numHiddenLayers + 2)))
+    this.layers.push(new exports.Tanh())
+
+    //console.log('input : ', this.layers[0].weights._size)
+
+
+    let prevLayerOutputs = outputs * (numHiddenLayers + 2)
+    for (let i = 0; i < numHiddenLayers; i++) {
+      this.layers.push(new exports.Dense(prevLayerOutputs, outputs * (numHiddenLayers - i + 2)))
+      prevLayerOutputs = outputs * (numHiddenLayers - i + 2)
+      this.layers.push(new exports.Tanh())
+
+      //console.log(i, ':', this.layers[2 * i + 2].weights._size)
+    }
+
+    this.layers.push(new exports.Dense(prevLayerOutputs, outputs))
+    this.layers.push(new exports.Tanh())
+
+
+    //console.log('output : ', this.layers[this.layers.length - 2].weights._size)
+  }
+
+  setLayers (layers) {
     this.layers = layers
   }
 
   predict (input) {
-    let output = input
+
+    let temp = input
+
+    let output
+
+    if (temp.constructor.name !== 'Matrix') temp = math.matrix(temp)
+
+    if (temp._size.length === 1) output = math.resize(temp, [temp._size[0], 1])
+    else output = temp
+
+
     for (const layer of this.layers) {
       output = layer.forward(output)
     }
     return output
   }
 
-  train (xTrain, yTrain, loss, lossPrime, learningRate, epochs = 1000) {
+  train (xTrain, yTrain, loss, lossPrime, learningRate, epochs = 1000, verbose=false) {
     const errors = []
     const zippedXY = zip(xTrain, yTrain)
     for (let e = 0; e < epochs; e++) {
@@ -113,6 +147,8 @@ exports.Network = class {
       }
       error /= zippedXY.length
       errors.push(error)
+
+      if (verbose) console.log(`${e + 1}/${epochs}, error=${error}`)
     }
     return errors
   }
