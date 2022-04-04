@@ -69,11 +69,23 @@ exports.Tanh = class extends exports.Activation {
 }
 
 exports.mse = function (yTrue, yPred) {
-  return math.mean(math.square(math.subtract(yTrue, yPred)))
+  let tempTrue = math.matrix(math.clone(yTrue))
+  let tempPred = math.matrix(math.clone(yPred))
+
+  if (tempTrue._size.length === 1) tempTrue = math.resize(tempTrue, [tempTrue._size[0], 1])
+  if (tempPred._size.length === 1) tempPred = math.resize(tempPred, [tempPred._size[0], 1])
+
+  return math.mean(math.square(math.subtract(tempTrue, tempPred)))
 }
 
 exports.msePrime = function (yTrue, yPred) {
-  return math.divide(math.multiply(math.subtract(yPred, yTrue), 2), yTrue.length)
+  let tempTrue = math.matrix(math.clone(yTrue))
+  let tempPred = math.matrix(math.clone(yPred))
+
+  if (tempTrue._size.length === 1) tempTrue = math.resize(tempTrue, [tempTrue._size[0], 1])
+  if (tempPred._size.length === 1) tempPred = math.resize(tempPred, [tempPred._size[0], 1])
+
+  return math.divide(math.multiply(math.subtract(tempPred, tempTrue), 2), tempTrue.length)
 }
 
 const zip = (a, b) => a.map((k, i) => [k, b[i]])
