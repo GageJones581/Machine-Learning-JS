@@ -32,7 +32,6 @@ exports.Dense = class extends exports.Layer {
   }
 
   backward (outputGradient, learningRate) {
-
     const weightsGradient = math.multiply(outputGradient, math.transpose(this.input))
     this.bias = math.subtract(this.bias, math.multiply(outputGradient, learningRate))
     const inputGradient = math.multiply(math.transpose(this.weights), outputGradient)
@@ -85,7 +84,7 @@ exports.msePrime = function (yTrue, yPred) {
   if (tempTrue._size.length === 1) tempTrue = math.resize(tempTrue, [tempTrue._size[0], 1])
   if (tempPred._size.length === 1) tempPred = math.resize(tempPred, [tempPred._size[0], 1])
 
-  return math.divide(math.multiply(math.subtract(tempPred, tempTrue), 2), tempTrue.length)
+  return math.divide(math.multiply(math.subtract(tempPred, tempTrue), 2), tempTrue._data.length)
 }
 
 const zip = (a, b) => a.map((k, i) => [k, b[i]])
@@ -96,23 +95,15 @@ exports.Network = class {
     this.layers.push(new exports.Dense(inputs, outputs * (numHiddenLayers + 2)))
     this.layers.push(new exports.Tanh())
 
-    //console.log('input : ', this.layers[0].weights._size)
-
-
     let prevLayerOutputs = outputs * (numHiddenLayers + 2)
     for (let i = 0; i < numHiddenLayers; i++) {
       this.layers.push(new exports.Dense(prevLayerOutputs, outputs * (numHiddenLayers - i + 2)))
       prevLayerOutputs = outputs * (numHiddenLayers - i + 2)
       this.layers.push(new exports.Tanh())
-
-      //console.log(i, ':', this.layers[2 * i + 2].weights._size)
     }
 
     this.layers.push(new exports.Dense(prevLayerOutputs, outputs))
     this.layers.push(new exports.Tanh())
-
-
-    //console.log('output : ', this.layers[this.layers.length - 2].weights._size)
   }
 
   setLayers (layers) {
@@ -120,7 +111,6 @@ exports.Network = class {
   }
 
   predict (input) {
-
     let temp = input
 
     let output
@@ -130,14 +120,13 @@ exports.Network = class {
     if (temp._size.length === 1) output = math.resize(temp, [temp._size[0], 1])
     else output = temp
 
-
     for (const layer of this.layers) {
       output = layer.forward(output)
     }
     return output
   }
 
-  train (xTrain, yTrain, loss, lossPrime, learningRate, epochs = 1000, verbose=false) {
+  train (xTrain, yTrain, loss, lossPrime, learningRate, epochs = 1000, verbose = false) {
     const errors = []
     const zippedXY = zip(xTrain, yTrain)
     for (let e = 0; e < epochs; e++) {
@@ -146,14 +135,19 @@ exports.Network = class {
         const x = math.resize(zippedXY[i][0], [zippedXY[i][0].length, 1])
         const y = math.resize(zippedXY[i][1], [zippedXY[i][1].length, 1])
 
+
         const output = this.predict(x)
+
         let grad = lossPrime(y, output)
 
+
         error += loss(y, output)
+
 
         for (const layer of this.layers.reverse()) {
           grad = layer.backward(grad, learningRate)
         }
+
         this.layers.reverse()
 
       }
@@ -165,3 +159,22 @@ exports.Network = class {
     return errors
   }
 }
+
+const X = [[0, 0], [0, 1], [1, 0], [1, 1]]
+const Y = [[0], [1], [1], [0]]
+
+const net = new exports.Network(2, 1, 1)
+
+const errors = net.train(X, Y, exports.mse, exports.msePrime, 0.1, 1000, true)
+
+let err = 0
+for (let i = 0; i < X.length; i++) {
+  const pred = net.predict(X[i])
+  console.log('X:', X[i], ' | Y:', Y[i], ' | Y*: ', math.round(pred._data, 3))
+  err += exports.mse(Y[i], pred)
+}
+
+const pred = net.predict([0.34, 0.92])
+console.log(math.round(pred._data, 3))
+
+console.log('avg error:', err)
