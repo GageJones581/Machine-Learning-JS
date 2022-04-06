@@ -159,22 +159,3 @@ exports.Network = class {
     return errors
   }
 }
-
-const X = [[0, 0], [0, 1], [1, 0], [1, 1]]
-const Y = [[0], [1], [1], [0]]
-
-const net = new exports.Network(2, 1, 1)
-
-const errors = net.train(X, Y, exports.mse, exports.msePrime, 0.1, 1000, true)
-
-let err = 0
-for (let i = 0; i < X.length; i++) {
-  const pred = net.predict(X[i])
-  console.log('X:', X[i], ' | Y:', Y[i], ' | Y*: ', math.round(pred._data, 3))
-  err += exports.mse(Y[i], pred)
-}
-
-const pred = net.predict([0.34, 0.92])
-console.log(math.round(pred._data, 3))
-
-console.log('avg error:', err)
