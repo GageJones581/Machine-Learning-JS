@@ -1,5 +1,23 @@
 const math = require('mathjs')
 
+function shuffle(array) {
+  let currentIndex = array.length,  randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex != 0) {
+
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+
 exports.Layer = class {
   constructor () {
     this.input = null
@@ -41,8 +59,8 @@ exports.Dense = class extends exports.Layer {
     const weightsGradient = math.multiply(outputGradient, math.transpose(this.input))
 
 
-    this.bias = math.subtract(this.bias, math.multiply(outputGradient, learningRate))
-    this.weights = math.subtract(this.weights, math.multiply(weightsGradient, learningRate))
+    // this.bias = math.subtract(this.bias, math.multiply(outputGradient, learningRate))
+    // this.weights = math.subtract(this.weights, math.multiply(weightsGradient, learningRate))
 
     const beta1 = 0.94
     const beta2 = 0.9878
@@ -111,6 +129,7 @@ exports.mse = function (yTrue, yPred) {
 }
 
 exports.msePrime = function (yTrue, yPred) {
+
   let tempTrue = math.matrix(math.clone(yTrue))
   let tempPred = math.matrix(math.clone(yPred))
 
@@ -118,6 +137,7 @@ exports.msePrime = function (yTrue, yPred) {
   if (tempPred._size.length === 1) tempPred = math.resize(tempPred, [tempPred._size[0], 1])
 
   return math.divide(math.multiply(math.subtract(tempPred, tempTrue), 2), tempTrue._data.length)
+
 }
 
 const zip = (a, b) => a.map((k, i) => [k, b[i]])
@@ -159,12 +179,15 @@ exports.Network = class {
     return output
   }
 
-  train (xTrain, yTrain, loss, lossPrime, learningRate, epochs = 1000, verbose = false) {
+  train (xTrain, yTrain, loss, lossPrime, learningRate, epochs = 1000, iterPerEpoch = -1, verbose = false) {
+    if (iterPerEpoch <= 0) iterPerEpoch = xTrain.length
+    if (iterPerEpoch > xTrain.length) iterPerEpoch = xTrain.length
     const errors = []
     const zippedXY = zip(xTrain, yTrain)
     for (let e = 0; e < epochs; e++) {
       let error = 0
-      for (let i = 0; i < zippedXY.length; i++) {
+      shuffle(zippedXY)
+      for (let i = 0; i < iterPerEpoch; i++) {
         const x = math.resize(zippedXY[i][0], [zippedXY[i][0].length, 1])
         const y = math.resize(zippedXY[i][1], [zippedXY[i][1].length, 1])
 
