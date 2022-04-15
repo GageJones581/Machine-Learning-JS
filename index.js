@@ -22,6 +22,12 @@ exports.Dense = class extends exports.Layer {
     this.bias = this.bias.map(function (value, index, matrix) {
       return value * (math.random() * 2 - 1)
     })
+
+    this.mw = math.matrix(math.zeros(outputs, inputs))
+    this.vw = math.matrix(math.zeros(outputs, inputs))
+
+    this.mb = math.matrix(math.zeros(outputs, 1))
+    this.vb = math.matrix(math.zeros(outputs, 1))
   }
 
   forward (input) {
@@ -31,11 +37,38 @@ exports.Dense = class extends exports.Layer {
     return this.output
   }
 
-  backward (outputGradient, learningRate) {
+  backward (outputGradient, learningRate, iter) {
     const weightsGradient = math.multiply(outputGradient, math.transpose(this.input))
+
+
     this.bias = math.subtract(this.bias, math.multiply(outputGradient, learningRate))
-    const inputGradient = math.multiply(math.transpose(this.weights), outputGradient)
     this.weights = math.subtract(this.weights, math.multiply(weightsGradient, learningRate))
+
+    const beta1 = 0.94
+    const beta2 = 0.9878
+    const eps = 10**-8
+
+    for (let i = 0; i < this.weights._size[0]; i++) {
+      for (let j = 0; j < this.weights._size[1]; j++) {
+        this.mw._data[i][j] = beta1 * this.mw._data[i][j] + (1 - beta1) * weightsGradient._data[i][j]
+        this.vw._data[i][j] = beta2 * this.vw._data[i][j] + (1 - beta2) * weightsGradient._data[i][j] ** 2
+        const mhat = this.mw._data[i][j] / (1 - beta1 ** (iter + 1))
+        const vhat = this.vw._data[i][j] / (1 - beta2 ** (iter + 1))
+        this.weights._data[i][j] -= learningRate * mhat / (math.sqrt(vhat) + eps)
+      }
+    }
+
+    for (let i = 0; i < this.bias._size[0]; i++) {
+      for (let j = 0; j < this.bias._size[1]; j++) {
+        this.mb._data[i][j] = beta1 * this.mb._data[i][j] + (1 - beta1) * outputGradient._data[i][j]
+        this.vb._data[i][j] = beta2 * this.vb._data[i][j] + (1 - beta2) * outputGradient._data[i][j] ** 2
+        const mhat = this.mb._data[i][j] / (1 - beta1 ** (iter + 1))
+        const vhat = this.vb._data[i][j] / (1 - beta2 ** (iter + 1))
+        this.bias._data[i][j] -= learningRate * mhat / (math.sqrt(vhat) + eps)
+      }
+    }
+
+    const inputGradient = math.multiply(math.transpose(this.weights), outputGradient)
     return inputGradient
   }
 }
@@ -53,7 +86,7 @@ exports.Activation = class extends exports.Layer {
     return this.output
   }
 
-  backward (outputGradient, learningRate) {
+  backward (outputGradient, learningRate, iter) {
     const inputGradient = math.dotMultiply(outputGradient, this.activationPrime(this.input))
     return inputGradient
   }
@@ -135,21 +168,15 @@ exports.Network = class {
         const x = math.resize(zippedXY[i][0], [zippedXY[i][0].length, 1])
         const y = math.resize(zippedXY[i][1], [zippedXY[i][1].length, 1])
 
-
         const output = this.predict(x)
 
         let grad = lossPrime(y, output)
-
-
         error += loss(y, output)
 
-
         for (const layer of this.layers.reverse()) {
-          grad = layer.backward(grad, learningRate)
+          grad = layer.backward(grad, learningRate, e)
         }
-
         this.layers.reverse()
-
       }
       error /= zippedXY.length
       errors.push(error)
